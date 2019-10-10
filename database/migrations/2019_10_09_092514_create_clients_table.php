@@ -17,7 +17,7 @@ class CreateClientsTable extends Migration
             $table->bigIncrements('id');
             $table->string('name');
             $table->string('last_name');
-            $table->string('patronimic');
+            $table->string('patronomic');
             $table->string('country');
             $table->string('city');
         });

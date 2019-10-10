@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Client extends Model
 {
     protected $fillable = [
-        'name', 'last_name', 'patronimic', 'country', 'city',
+        'name', 'last_name', 'patronomic', 'country', 'city',
     ];
 
     public function purse() {
