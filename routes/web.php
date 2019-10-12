@@ -11,6 +11,16 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+$router->group(['prefix' => 'api/v1'], function() use ($router) {
+    $router->get('clients', 'ClientController@index');
+    $router->get('clients/{id}', 'ClientController@show');
+    $router->post('clients', 'ClientController@store');
+
+    $router->get('currencies', 'CurrencyController@index');
+    $router->get('currencies/{code}', 'CurrencyController@show');
+    $router->post('currencies', 'CurrencyController@store');
+    $router->putch('currencies/{code}', 'CurrencyController@update');
+
+    $router->post('purses/{id}/refill', 'PurseController@refill');
+    $router->post('purses/remittance', 'PurseController@remittance');
 });
