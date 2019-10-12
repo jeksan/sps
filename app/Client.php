@@ -2,9 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use App\BaseModel;
 
-class Client extends Model
+class Client extends BaseModel
 {
     protected $fillable = [
         'name', 'last_name', 'patronomic', 'country', 'city',

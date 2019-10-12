@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Currency;
+use App\Http\Resources\PurseResource;
 use App\OperationHistory;
 use App\Purse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Laravel\Lumen\Routing\Controller;
 
 class PurseController extends Controller
 {
@@ -18,10 +20,11 @@ class PurseController extends Controller
     const CURRENCY_TO_NOT_FOUND = 'Currency to not found';
     const CURRENCY_UNAVAILABLE_ERROR = 'Unavailable currency';
     const NOT_ENOUGH_MONEY_ERROR = 'Not enough funds in the account';
+
     /**
      * @param Request $request
      * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return PurseResource|\Illuminate\Http\JsonResponse
      */
     public function refill(Request $request, int $id)
     {
@@ -35,8 +38,8 @@ class PurseController extends Controller
             }
             $currency = $purse->currency()->first();
             $operationHistory = new OperationHistory;
-            $operationHistory->currency()->save($currency);
-            $operationHistory->purseTo()->save($purse);
+            $operationHistory->currency()->associate($currency);
+            $operationHistory->purseTo()->associate($purse);
             $operationHistory->currency_quote = $currency->quote;
             $operationHistory->amount = $amount;
             $operationHistory->date = date('Y-m-d');
@@ -44,13 +47,17 @@ class PurseController extends Controller
                 throw new \Exception(self::SAVE_HISTORY_ERROR);
             }
             DB::commit();
-            return response()->json($purse, 200);
+            return new PurseResource($purse);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function remittance(Request $request)
     {
         $purseFrom = $purseTo = $currency = $amount = null;
@@ -82,13 +89,12 @@ class PurseController extends Controller
             return response()->json($e->getMessage(), 400);
         }
 
-
         try {
             DB::beginTransaction();
             $operationHistory = new OperationHistory;
-            $operationHistory->purseFrom()->save($purseFrom);
-            $operationHistory->purseTo()->save($purseTo);
-            $operationHistory->currency()->save($currency);
+            $operationHistory->purseFrom()->associate($purseFrom);
+            $operationHistory->purseTo()->associate($purseTo);
+            $operationHistory->currency()->associate($currency);
             $operationHistory->currency_quote = $currency->quote;
             $operationHistory->amount = $amount;
             if (!$operationHistory->save()) {

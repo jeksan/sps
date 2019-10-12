@@ -2,9 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use App\BaseModel;
 
-class Purse extends Model
+class Purse extends BaseModel
 {
     protected $fillable = [
         'client_id', 'currency_id', 'balance',

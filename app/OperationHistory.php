@@ -2,9 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use App\BaseModel;
 
-class OperationHistory extends Model
+class OperationHistory extends BaseModel
 {
     protected $fillable = [
         'purse_from', 'purse_to', 'currency_id', 'currency_quote', 'amount', 'date',

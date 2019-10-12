@@ -2,9 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use App\BaseModel;
 
-class Currency extends Model
+class Currency extends BaseModel
 {
     protected $fillable = [
         'name', 'quote', 'code',
