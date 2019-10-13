@@ -14,6 +14,11 @@ class CurrencyResource extends Resource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'code' => $this->code,
+            'name' => $this->name,
+            'quote' => (float)$this->quote,
+        ];
     }
 }

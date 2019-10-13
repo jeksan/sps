@@ -6,7 +6,6 @@ use App\CurrencyQuote;
 class CurrencySeeder extends Seeder
 {
     private $actualCurrencyRate = 'https://api.openrates.io/latest?base=USD';
-    private $apiUrl = '/api/v1/currencies';
     private $scaleRound = 6;
     private $currencies = [
         'AUD' => 'Australian Dollar (AUD)',
@@ -49,7 +48,6 @@ class CurrencySeeder extends Seeder
      */
     public function run()
     {
-        $this->apiUrl = env('APP_URL', 'http://127.0.0.1:8000') . $this->apiUrl;
         try {
             $client = new \GuzzleHttp\Client();
             $response = $client->get($this->actualCurrencyRate)->getBody();
@@ -74,7 +72,7 @@ class CurrencySeeder extends Seeder
                         'quote' => $quote,
                         'date' => $currentDate
                     ]);
-                    if (!$currency->currencyQuotes()->save($currencyQuoteHistory)) {
+                    if (!$currency->currencyQuoteHistory()->save($currencyQuoteHistory)) {
                         throw new Exception('Error save currency quotes');
                     }
                     unset($currencyQuoteHistory);

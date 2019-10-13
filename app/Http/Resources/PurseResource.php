@@ -18,7 +18,7 @@ class PurseResource extends Resource
             'id' => $this->id,
             'client' => new ClientResource($this->whenLoaded('client')),
             'currency' => new CurrencyResource($this->whenLoaded('currency')),
-            'balance' => $this->balance,
+            'balance' => (float)$this->balance,
         ];
     }
 }

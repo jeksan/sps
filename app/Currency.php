@@ -15,7 +15,7 @@ class Currency extends BaseModel
         return $this->hasOne(Client::class, 'client_id');
     }
 
-    public function currencyQuotes()
+    public function currencyQuoteHistory()
     {
         return $this->hasMany(CurrencyQuote::class, 'currency_id', 'id');
     }

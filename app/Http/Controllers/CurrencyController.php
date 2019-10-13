@@ -14,7 +14,8 @@ class CurrencyController extends Controller
     const SAVE_ERROR = 'Error in save currency';
     const CURRENCY_UNAVAILABLE_ERROR = 'Currency not found';
     const DUBLICATE_CURRENCY_ERROR = 'Currency is already created';
-
+    const DUBLICATE_CURRENCY_QUOTE_ERROR = 'Currency quote on date is already created';
+    const FUTURE_QUOTE_ERROR = 'No one knows future quotes';
     /**
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
@@ -57,7 +58,7 @@ class CurrencyController extends Controller
             $currencyQuotes = new CurrencyQuote;
             $currencyQuotes->date = date('Y-m-d');
             $currencyQuotes->quote = $request->input('quote');
-            $currency->currencyQuotes()->save($currencyQuotes);
+            $currency->currencyQuoteHistory()->save($currencyQuotes);
             DB::commit();
             return new CurrencyResource($currency);
         } catch (\Exception $e) {
@@ -73,14 +74,29 @@ class CurrencyController extends Controller
      */
     public function updateQuote(Request $request, string $code)
     {
+        $currentDate = date('Y-m-d');
+        $currentDateTimestamp = strtotime($currentDate);
+        $date = $request->input('date');
+
+        if (strtotime($date) > $currentDateTimestamp) {
+            response()->json(self::FUTURE_QUOTE_ERROR, 400);
+        }
+
         $currency = Currency::where('code', $code)->first();
         if (!$currency) {
             return response()->json(self::CURRENCY_UNAVAILABLE_ERROR, 400);
         }
+
+        if ($date &&
+            $currentDateTimestamp > strtotime($date) &&
+            $currency->currencyQuoteHistory()
+                ->where('date', $date)
+                ->first()) {
+            return response()->json(self::DUBLICATE_CURRENCY_QUOTE_ERROR, 400);
+        }
+
         try {
-            $currentDate = date('Y-m-d');
-            $date = $request->input('date', $currentDate);
-            if (strtotime($date) === strtotime($currentDate)) {
+            if (!$date || strtotime($date) === strtotime($currentDate)) {
                 $currency->quote = $request->input('quote');
                 $currency->save();
             }

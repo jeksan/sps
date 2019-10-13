@@ -17,7 +17,7 @@ class PurseController extends Controller
     const SAVE_HISTORY_ERROR = 'Error save operation history';
     const PURSE_FROM_NOT_FOUND = 'Purse from not found';
     const PURSE_TO_NOT_FOUND = 'Purse to not found';
-    const CURRENCY_TO_NOT_FOUND = 'Currency to not found';
+    const CURRENCY_TO_NOT_FOUND = 'Currency for remittance not found';
     const CURRENCY_UNAVAILABLE_ERROR = 'Unavailable currency';
     const NOT_ENOUGH_MONEY_ERROR = 'Not enough funds in the account';
 
@@ -76,8 +76,8 @@ class PurseController extends Controller
                 throw new \Exception(self::CURRENCY_TO_NOT_FOUND);
             }
 
-            if ($purseFrom->currency()->first()->code !== $currency->id &&
-                $purseTo->currency()->first()->code !== $currency->id
+            if ($purseFrom->currency()->first()->id !== $currency->id &&
+                $purseTo->currency()->first()->id !== $currency->id
             ) {
                 throw new \Exception(self::CURRENCY_UNAVAILABLE_ERROR);
             }
@@ -97,12 +97,13 @@ class PurseController extends Controller
             $operationHistory->currency()->associate($currency);
             $operationHistory->currency_quote = $currency->quote;
             $operationHistory->amount = $amount;
+            $operationHistory->date = date('Y-m-d');
             if (!$operationHistory->save()) {
                 throw \Exception(self::SAVE_HISTORY_ERROR);
             }
 
-            $purseFrom->balance -= $this->conversion($purseFrom->currency()->first(), $amount, $currency);
-            $purseTo->balance -= $this->conversion($purseTo->currency()->first(), $amount, $currency);
+            $purseFrom->balance -= $this->conversion($purseFrom->currency()->first(), $currency, $amount);
+            $purseTo->balance += $this->conversion($purseTo->currency()->first(), $currency, $amount);
 
             if (!($purseFrom->save() && $purseTo->save())) {
                 throw new \Exception(self::SAVE_REMITTANCE_ERROR);
@@ -115,12 +116,12 @@ class PurseController extends Controller
         }
     }
 
-    private function conversion(Currency $currencyFrom, float $amountFrom, Currency $currencyTo)
+    private function conversion(Currency $currencyFrom, Currency $currencyTo, float $amount)
     {
         if ($currencyFrom->id === $currencyTo->id) {
-            return $amountFrom;
+            return $amount;
         }
-        $base = (float)$amountFrom->quote * $amountFrom;
+        $base = (float)$currencyFrom->quote * $amount;
         $result = $base / (float)$currencyTo->quote;
         return $result;
     }
