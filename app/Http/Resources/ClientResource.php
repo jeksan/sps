@@ -17,8 +17,6 @@ class ClientResource extends Resource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'last_name' => $this->last_name,
-            'patronomic' => $this->patronomic,
             'country' => $this->country,
             'city' => $this->city,
             'purse' => new PurseResource($this->whenLoaded('purse')),

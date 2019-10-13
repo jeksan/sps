@@ -47,10 +47,11 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $client = new Client;
+        $queryBuilder = Client::query();
         foreach ($client->getFillable() as $field) {
-            $client->where($field, '=', $request->input($field));
+            $queryBuilder->where($field, '=', $request->input($field));
         }
-        if ($client->first()) {
+        if ($queryBuilder->first()) {
             return response()->json(self::DUBLICATE_CLIENT_ERROR, 400);
         }
 
