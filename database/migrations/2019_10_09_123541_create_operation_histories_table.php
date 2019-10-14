@@ -15,12 +15,11 @@ class CreateOperationHistoriesTable extends Migration
     {
         Schema::create('operation_histories', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('purse_from')->nullable();
-            $table->unsignedBigInteger('purse_to');
-            $table->unsignedBigInteger('currency_id');
+            $table->unsignedBigInteger('purse_id');
+            $table->dateTime('date');
             $table->float('currency_quote');
             $table->float('amount');
-            $table->dateTime('date');
+            $table->string('operation_comment');
         });
     }
 

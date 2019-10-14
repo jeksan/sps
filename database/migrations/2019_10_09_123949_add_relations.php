@@ -20,9 +20,7 @@ class AddRelations extends Migration
             $table->foreign('currency_id')->references('id')->on('currencies');
         });
         Schema::table('operation_histories', function (Blueprint $table) {
-            $table->foreign('purse_from')->references('id')->on('purses');
-            $table->foreign('purse_to')->references('id')->on('purses');
-            $table->foreign('currency_id')->references('id')->on('currencies');
+            $table->foreign('purse_id')->references('id')->on('purses');
         });
     }
 
@@ -40,9 +38,7 @@ class AddRelations extends Migration
             $table->dropForeign('currency_id');
         });
         Schema::table('operation_histories', function (Blueprint $table) {
-            $table->dropForeign('purse_from');
-            $table->dropForeign('purse_to');
-            $table->dropForeign('currency_id');
+            $table->dropForeign('purse_id');
         });
     }
 }

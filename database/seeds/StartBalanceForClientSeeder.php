@@ -28,11 +28,11 @@ class StartBalanceForClientSeeder extends Seeder
                     throw new Exception('Error refill purse');
                 }
                 $operationHistory = new OperationHistory;
-                $operationHistory->purseTo()->associate($purse);
-                $operationHistory->currency()->associate($purse->currency);
+                $operationHistory->purse()->associate($purse);
                 $operationHistory->currency_quote = $purse->currency->quote;
                 $operationHistory->date = $currentDate;
                 $operationHistory->amount = $rndAmount;
+                $operationHistory->operation_comment = OperationHistory::OPERATION_REFILL;
                 if (!$operationHistory->save()) {
                     throw new Exception('Error save operations history');
                 }

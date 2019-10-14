@@ -19,4 +19,9 @@ class Purse extends BaseModel
     {
         return $this->belongsTo(Currency::class, 'currency_id');
     }
+
+    public function operationHistory()
+    {
+        return $this->hasMany(OperationHistory::class, 'purse_id');
+    }
 }

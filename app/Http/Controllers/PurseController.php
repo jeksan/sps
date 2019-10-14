@@ -34,17 +34,17 @@ class PurseController extends Controller
             $amount = $request->input('amount', 0);
             $purse->balance += $amount;
             if (!$purse->save()) {
-                throw new \Exception(self::SAVE_PURSE_REFILL_ERROR);
+                throw new \Exception(Purse::SAVE_PURSE_REFILL_ERROR);
             }
             $currency = $purse->currency()->first();
             $operationHistory = new OperationHistory;
-            $operationHistory->currency()->associate($currency);
-            $operationHistory->purseTo()->associate($purse);
+            $operationHistory->purse()->associate($purse);
             $operationHistory->currency_quote = $currency->quote;
             $operationHistory->amount = $amount;
             $operationHistory->date = date('Y-m-d');
+            $operationHistory->operation_comment = OperationHistory::OPERATION_REFILL;
             if (!$operationHistory->save()) {
-                throw new \Exception(self::SAVE_HISTORY_ERROR);
+                throw new \Exception(OperationHistory::SAVE_HISTORY_ERROR);
             }
             DB::commit();
             return new PurseResource($purse);
@@ -60,7 +60,7 @@ class PurseController extends Controller
      */
     public function remittance(Request $request)
     {
-        $purseFrom = $purseTo = $currency = $amount = null;
+        $purseFrom = $purseTo = $purseFromCurrency = $purseFromAmount = $currency = $amount = null;
         try {
             $amount = (float)$request->input('amount');
 
@@ -76,13 +76,15 @@ class PurseController extends Controller
                 throw new \Exception(self::CURRENCY_TO_NOT_FOUND);
             }
 
-            if ($purseFrom->currency()->first()->id !== $currency->id &&
+            $purseFromCurrency = $purseFrom->currency()->first();
+            if ($purseFromCurrency->id !== $currency->id &&
                 $purseTo->currency()->first()->id !== $currency->id
             ) {
                 throw new \Exception(self::CURRENCY_UNAVAILABLE_ERROR);
             }
 
-            if ((float)$purseFrom->balance - ($amount * (float)$currency->quote) < 0) {
+            $purseFromAmount = $this->conversion($purseFromCurrency, $currency, $amount);
+            if (((float)$purseFrom->balance - $purseFromAmount) < 0) {
                 throw new \Exception(self::NOT_ENOUGH_MONEY_ERROR);
             }
         } catch (\Exception $e) {
@@ -90,20 +92,36 @@ class PurseController extends Controller
         }
 
         try {
+            $operationDate = date('Y-m-d');
             DB::beginTransaction();
-            $operationHistory = new OperationHistory;
-            $operationHistory->purseFrom()->associate($purseFrom);
-            $operationHistory->purseTo()->associate($purseTo);
-            $operationHistory->currency()->associate($currency);
-            $operationHistory->currency_quote = $currency->quote;
-            $operationHistory->amount = $amount;
-            $operationHistory->date = date('Y-m-d');
-            if (!$operationHistory->save()) {
+            $purseFrom->balance -= $purseFromAmount;
+
+            $operationHistoryFrom = new OperationHistory([
+                'purse_id' => $purseFrom->id,
+                'date' => $operationDate,
+                'currency_quote' => $purseFromCurrency->quote,
+                'amount' => -1.0 * $purseFromAmount,
+                'operation_comment' => OperationHistory::OPERATION_REMITTANCE,
+            ]);
+            if (!$purseFrom->operationHistory()->save($operationHistoryFrom)) {
                 throw \Exception(self::SAVE_HISTORY_ERROR);
             }
 
-            $purseFrom->balance -= $this->conversion($purseFrom->currency()->first(), $currency, $amount);
-            $purseTo->balance += $this->conversion($purseTo->currency()->first(), $currency, $amount);
+            $purseToCurrency = $purseTo->currency()
+                ->first();
+            $purseToAmount = $this->conversion($purseToCurrency, $currency, $amount);
+            $purseTo->balance += $purseToAmount;
+
+            $operationHistoryTo = new OperationHistory([
+                'purse_id' => $purseTo->id,
+                'date' => $operationDate,
+                'currency_quote' => $purseToCurrency->quote,
+                'amount' => $purseToAmount,
+                'operation_comment' => OperationHistory::OPERATION_REMITTANCE,
+            ]);
+            if (!$purseTo->operationHistory()->save($operationHistoryTo)) {
+                throw \Exception(self::SAVE_HISTORY_ERROR);
+            }
 
             if (!($purseFrom->save() && $purseTo->save())) {
                 throw new \Exception(self::SAVE_REMITTANCE_ERROR);
@@ -121,8 +139,8 @@ class PurseController extends Controller
         if ($currencyFrom->id === $currencyTo->id) {
             return $amount;
         }
-        $base = (float)$currencyFrom->quote * $amount;
-        $result = $base / (float)$currencyTo->quote;
+        $inBase = (float)$currencyFrom->quote * $amount;
+        $result = $inBase / (float)$currencyTo->quote;
         return $result;
     }
 

@@ -6,22 +6,15 @@ use App\BaseModel;
 
 class OperationHistory extends BaseModel
 {
+    const OPERATION_REFILL = 'operation:refill';
+    const OPERATION_REMITTANCE = 'operation:remittance';
+
     protected $fillable = [
-        'purse_from', 'purse_to', 'currency_id', 'currency_quote', 'amount', 'date',
+        'purse_id', 'date', 'currency_quote', 'amount', 'operation_comment'
     ];
 
-    public function purseFrom()
+    public function purse()
     {
-        return $this->belongsTo(Purse::class, 'purse_from');
-    }
-
-    public function purseTo()
-    {
-        return $this->belongsTo(Purse::class, 'purse_to');
-    }
-
-    public function currency()
-    {
-        return $this->belongsTo(Currency::class, 'currency_id');
+        return $this->belongsTo(Purse::class, 'purse_id');
     }
 }
