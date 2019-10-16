@@ -28,6 +28,6 @@ $router->group(['prefix' => 'api/v1'], function () use ($router) {
     $router->get('report/export', 'ReportController@generateXml');
 });
 
-$router->get('/{route:.*}/', function () {
+$router->get('/', function () {
     return view('app');
 });

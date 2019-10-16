@@ -109,7 +109,7 @@ class CurrencyController extends Controller
                 $currency->save();
             }
             $currencyQuotes = new CurrencyQuote;
-            $currencyQuotes->date = date('Y-m-d');
+            $currencyQuotes->date = $date ?: date('Y-m-d');
             $currencyQuotes->quote = $request->input('quote');
 
             if (!$currency->currencyQuotes()->save($currencyQuotes)) {
