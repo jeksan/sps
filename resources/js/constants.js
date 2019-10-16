@@ -1,0 +1,4 @@
+export const apiUrl = 'http://127.0.0.1:8000/api/v1';
+export const clientsApiUrl = `${apiUrl}/clients`;
+export const reportApiUrl = `${apiUrl}/report`;
+export const reportExportApiUrl = `${apiUrl}/report/export`;

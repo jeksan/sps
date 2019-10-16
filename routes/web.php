@@ -23,4 +23,11 @@ $router->group(['prefix' => 'api/v1'], function() use ($router) {
 
     $router->post('purses/{id}/refill', 'PurseController@refill');
     $router->post('purses/remittance', 'PurseController@remittance');
+
+    $router->get('report', 'ReportController@loadData');
+    $router->get('report/export', 'ReportController@generateCSV');
+});
+
+$router->get('/{route:.*}/', function ()  {
+    return view('app');
 });

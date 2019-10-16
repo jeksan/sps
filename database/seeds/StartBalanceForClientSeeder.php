@@ -16,13 +16,16 @@ class StartBalanceForClientSeeder extends Seeder
      */
     public function run()
     {
-        $currentDate = date('Y-m-d');
+        $currentDate = date('Y-m-d H:i:s');
         foreach (Purse::with('currency')->get() as $purse) {
             try {
                 DB::beginTransaction();
-                $rndAmount = mt_rand(1, $this->maxAmount) + abs(
+                $rndAmount = round(
+                    mt_rand(1, $this->maxAmount) + abs(
                     1-mt_rand(1, $this->maxAmount) / $this->maxAmount
-                    ) ;
+                    ),
+                    \App\Currency::SCALE
+                );
                 $purse->balance = $rndAmount;
                 if (!$purse->save()) {
                     throw new Exception('Error refill purse');

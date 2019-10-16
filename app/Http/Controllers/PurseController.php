@@ -20,6 +20,7 @@ class PurseController extends Controller
     const CURRENCY_TO_NOT_FOUND = 'Currency for remittance not found';
     const CURRENCY_UNAVAILABLE_ERROR = 'Unavailable currency';
     const NOT_ENOUGH_MONEY_ERROR = 'Not enough funds in the account';
+    const REMITTANCE_YOURSELF_ERROR = 'Don’t transfer money to yourself';
 
     /**
      * @param Request $request
@@ -41,7 +42,7 @@ class PurseController extends Controller
             $operationHistory->purse()->associate($purse);
             $operationHistory->currency_quote = $currency->quote;
             $operationHistory->amount = $amount;
-            $operationHistory->date = date('Y-m-d');
+            $operationHistory->date = date('Y-m-d H:i:s');
             $operationHistory->operation_comment = OperationHistory::OPERATION_REFILL;
             if (!$operationHistory->save()) {
                 throw new \Exception(OperationHistory::SAVE_HISTORY_ERROR);
@@ -72,6 +73,10 @@ class PurseController extends Controller
                 throw new \Exception(self::PURSE_TO_NOT_FOUND);
             }
 
+            if ($purseFrom->id === $purseTo->id) {
+                throw new \Exception(self::REMITTANCE_YOURSELF_ERROR);
+            }
+
             if (!($currency = Currency::where('code', $request->input('currency'))->first())) {
                 throw new \Exception(self::CURRENCY_TO_NOT_FOUND);
             }
@@ -83,7 +88,7 @@ class PurseController extends Controller
                 throw new \Exception(self::CURRENCY_UNAVAILABLE_ERROR);
             }
 
-            $purseFromAmount = $this->conversion($purseFromCurrency, $currency, $amount);
+            $purseFromAmount = $this->conversion($currency, $purseFromCurrency, $amount);
             if (((float)$purseFrom->balance - $purseFromAmount) < 0) {
                 throw new \Exception(self::NOT_ENOUGH_MONEY_ERROR);
             }
@@ -92,7 +97,7 @@ class PurseController extends Controller
         }
 
         try {
-            $operationDate = date('Y-m-d');
+            $operationDate = date('Y-m-d H:i:s');
             DB::beginTransaction();
             $purseFrom->balance -= $purseFromAmount;
 
@@ -141,7 +146,7 @@ class PurseController extends Controller
         }
         $inBase = (float)$currencyFrom->quote * $amount;
         $result = $inBase / (float)$currencyTo->quote;
-        return $result;
+        return round($result, Currency::SCALE);
     }
 
 }

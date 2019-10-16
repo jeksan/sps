@@ -16,13 +16,15 @@ class ClientController extends Controller
     const SAVE_CLIENT_ERROR = 'Error save new client';
     const SAVE_PURSE_ERROR = 'Error save new purse';
     const UNAVAILABLE_CURRENCY_ERROR = 'Currency not found';
-
+    const SEARCH_TERM = 'search';
     /**
+     * @param Request $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index()
+    public function index(Request $request)
     {
-        return ClientResource::collection(Client::all());
+        $clients = $this->filter($request);
+        return ClientResource::collection($clients->get());
     }
 
     /**
@@ -81,5 +83,21 @@ class ClientController extends Controller
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function filter(Request $request)
+    {
+        $queryBuilder = Client::query();
+        if ($request->query(self::SEARCH_TERM)) {
+            $queryBuilder->whereRaw(
+                'LOWER(name) like ?',
+                '%' . mb_strtolower($request->query(self::SEARCH_TERM)) . '%'
+            );
+        }
+        return $queryBuilder;
     }
 }

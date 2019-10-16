@@ -2,11 +2,11 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Seeder;
 use App\CurrencyQuote;
+use App\Currency;
 
 class CurrencySeeder extends Seeder
 {
     private $actualCurrencyRate = 'https://api.openrates.io/latest?base=USD';
-    private $scaleRound = 6;
     private $currencies = [
         'AUD' => 'Australian Dollar (AUD)',
         'BRL' => 'Brazilian Real (BRL)',
@@ -58,7 +58,7 @@ class CurrencySeeder extends Seeder
                     continue;
                 }
 
-                $quote = round(1 / $rate, $this->scaleRound);
+                $quote = round(1 / $rate, Currency::SCALE);
                 try {
                     DB::beginTransaction();
                     $currency = new \App\Currency;
