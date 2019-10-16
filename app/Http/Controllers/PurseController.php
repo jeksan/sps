@@ -7,6 +7,7 @@ use App\Http\Resources\PurseResource;
 use App\OperationHistory;
 use App\Purse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 use Laravel\Lumen\Routing\Controller;
 
@@ -35,7 +36,7 @@ class PurseController extends Controller
             $amount = $request->input('amount', 0);
             $purse->balance += $amount;
             if (!$purse->save()) {
-                throw new \Exception(Purse::SAVE_PURSE_REFILL_ERROR);
+                throw new \Exception(self::SAVE_PURSE_REFILL_ERROR);
             }
             $currency = $purse->currency()->first();
             $operationHistory = new OperationHistory;
@@ -45,13 +46,14 @@ class PurseController extends Controller
             $operationHistory->date = date('Y-m-d H:i:s');
             $operationHistory->operation_comment = OperationHistory::OPERATION_REFILL;
             if (!$operationHistory->save()) {
-                throw new \Exception(OperationHistory::SAVE_HISTORY_ERROR);
+                throw new \Exception(self::SAVE_HISTORY_ERROR);
             }
             DB::commit();
             return new PurseResource($purse);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json($e->getMessage(), 500);
+            return response()
+                ->json($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -93,7 +95,7 @@ class PurseController extends Controller
                 throw new \Exception(self::NOT_ENOUGH_MONEY_ERROR);
             }
         } catch (\Exception $e) {
-            return response()->json($e->getMessage(), 400);
+            return response()->json($e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
 
         try {
@@ -132,13 +134,20 @@ class PurseController extends Controller
                 throw new \Exception(self::SAVE_REMITTANCE_ERROR);
             }
             DB::commit();
-            return response()->json(true, 200);
+            return response()->json(true, Response::HTTP_OK);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json($e->getMessage(), 500);
+            return response()
+                ->json($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
+    /**
+     * @param Currency $currencyFrom
+     * @param Currency $currencyTo
+     * @param float $amount
+     * @return float
+     */
     private function conversion(Currency $currencyFrom, Currency $currencyTo, float $amount)
     {
         if ($currencyFrom->id === $currencyTo->id) {
@@ -148,5 +157,4 @@ class PurseController extends Controller
         $result = $inBase / (float)$currencyTo->quote;
         return round($result, Currency::SCALE);
     }
-
 }

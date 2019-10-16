@@ -2,7 +2,6 @@
     import Autocomplete from 'vuejs-auto-complete';
     import Datepicker from 'vuejs-datepicker';
     import axios from 'axios';
-    import moment from 'moment';
     import { clientsApiUrl, reportApiUrl, reportExportApiUrl } from "../constants";
 
     export default {
@@ -22,8 +21,25 @@
             Datepicker
         },
         computed: {
-            datePickerFormat() {
-                return 'dd.MM.yyyy';
+            datePickerSettings() {
+                return {
+                    format: 'dd.MM.yyyy',
+                    inputClass: 'form-control',
+                    clearButton: true,
+                    bootstrapStyling: true,
+                    useUtc: true,
+                };
+            },
+            autocompleteSettings()
+            {
+                return {
+                    ref: 'autocomplete',
+                    source: this.apiUrl,
+                    resultsProperty: 'data',
+                    resultsDisplay: 'name',
+                    placeholder: 'Select client',
+                    inputClass: 'form-control',
+                };
             },
             apiUrl () {
                 return `${clientsApiUrl}?search=`;
@@ -87,9 +103,10 @@
             },
             handleClickExport()
             {
-                let exportUrl = `${reportExportApiUrl}?client_id=${this.selectedClient}`;
-                    this.periodStart && (exportUrl += '&')
-                window.location.href = ;
+                let exportUrl = `${reportExportApiUrl}?client-id=${this.selectedClient}`;
+                    this.periodStart && (exportUrl += `&period-start=${this.periodStart.toISOString()}`);
+                    this.periodEnd && (exportUrl += `&period-end=${this.periodEnd.toISOString()}`);
+                window.location.href = exportUrl;
             },
             resetData() {
                 this.selectedClient = null;
@@ -107,51 +124,38 @@
             <div class="row">
                 <h5>Client</h5>
                 <autocomplete
-                    ref="autocomplete"
-                    :source="apiUrl"
-                    results-property="data"
-                    results-display="name"
-                    placeholder="Select client"
-                    input-class="form-control"
-                    @selected="handleSelectClient"
-                    @clear="handleClickClear"/>
+                    v-bind="autocompleteSettings"
+                    v-on:selected="handleSelectClient"
+                    v-on:clear="handleClickClear"/>
             </div>
             <div class="row">
                 <h5>Period</h5>
                 <div class="row">
-                    <div class="col-1">
+                    <div class="col-1 align-self-center">
                         from
                     </div>
                     <div class="col-5">
                         <datepicker
-                            :format="datePickerFormat"
-                            input-class="form-control"
-                            clear-button="true"
-                            bootstrap-styling="true"
-                            v-model="periodStart"
-                            name="period-start"/>
+                            v-bind=datePickerSettings
+                            v-model="periodStart"/>
                     </div>
-                    <div class="col-1">
+                    <div class="col-1 align-self-center">
                         to
                     </div>
                     <div class="col-5">
                         <datepicker
-                            :format="datePickerFormat"
-                            :input-class="form-control"
-                            clear-button="true"
-                            bootstrap-styling="true"
-                            v-model="periodEnd"
-                            name="period-end"/>
+                            v-bind=datePickerSettings
+                            v-model="periodEnd"/>
                     </div>
                 </div>
             </div>
             <div class="row justify-content-end" v-show="showActionBar">
                 <button
                     class="btn btn-primary mr-2"
-                    @click="handleClickFetchData">Generate</button>
+                    v-on:click="handleClickFetchData">Generate</button>
                 <button
                     class="btn btn-success"
-                    @click="handleClickExport">Export</button>
+                    v-on:click="handleClickExport">Export to XML</button>
             </div>
         </div>
 

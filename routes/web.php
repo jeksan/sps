@@ -25,7 +25,7 @@ $router->group(['prefix' => 'api/v1'], function() use ($router) {
     $router->post('purses/remittance', 'PurseController@remittance');
 
     $router->get('report', 'ReportController@loadData');
-    $router->get('report/export', 'ReportController@generateCSV');
+    $router->get('report/export', 'ReportController@generateXml');
 });
 
 $router->get('/{route:.*}/', function ()  {

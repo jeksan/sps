@@ -4,13 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Client;
 use App\Currency;
+use App\Utilites\XMLExporter;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Laravel\Lumen\Routing\Controller;
 
 class ReportController extends Controller
 {
     const UNAVAILABLE_CLIENT_ERROR = 'Client not set';
+    const EXPORT_HEADERS = [
+        'Content-Type' => 'application/xml',
+        'Content-Description' =>  'File Transfer',
+    ];
 
+    /**
+     * @param int $clientId
+     * @param string|null $periodStart
+     * @param string|null $periodEnd
+     * @return array
+     */
     private function prepareData(int $clientId, string $periodStart = null, string $periodEnd = null)
     {
         $result = [];
@@ -18,6 +31,7 @@ class ReportController extends Controller
             $purse = $client->purse()->first();
             $currency = $purse->currency()->first();
             $result = [
+                'client' => $client->name,
                 'purse' => $purse->id,
                 'balance' => $purse->balance,
                 'currencyCode' => $currency->code,
@@ -63,29 +77,71 @@ class ReportController extends Controller
         return true;
     }
 
+    /**
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    private function prepareParameters(Request $request)
+    {
+        return [
+            $request->query('client-id'),
+            $request->query('period-start') ? new Carbon($request->query('period-start')) : null,
+            $request->query('period-end') ? new Carbon($request->query('period-end')) : null,
+        ];
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory
+     * @throws \Exception
+     */
     public function loadData(Request $request)
     {
         if (!$this->validation($request)) {
-            return response(self::UNAVAILABLE_CLIENT_ERROR, 400);
+            return response(
+                self::UNAVAILABLE_CLIENT_ERROR,
+                Response::HTTP_BAD_REQUEST
+            );
         }
-
-        $clientId = $request->query('client-id');
-        $periodStart = $request->query('period-start');
-        $periodEnd = $request->query('period-end');
-
-        $data = $this->prepareData($clientId, $periodStart, $periodEnd);
-        return response()->json($data, 200);
+        $params = $this->prepareParameters($request);
+        $data = $this->prepareData(...$params);
+        return response()->json($data, Response::HTTP_OK);
     }
 
-    public function generateCSV(Request $request)
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\Response|
+     *  \Laravel\Lumen\Http\ResponseFactory|
+     *  \Symfony\Component\HttpFoundation\StreamedResponse
+     * @throws \Exception
+     */
+    public function generateXml(Request $request)
     {
         if (!$this->validation($request)) {
-            return response(self::UNAVAILABLE_CLIENT_ERROR, 400);
+            return response(
+                self::UNAVAILABLE_CLIENT_ERROR,
+                Response::HTTP_BAD_REQUEST
+            );
         }
-
-        $clientId = $request->query('client-id');
-        $periodStart = $request->query('period-start');
-        $periodEnd = $request->query('period-end');
-        $data = $this->prepareData($clientId, $periodStart, $periodEnd);
+        $params = $this->prepareParameters($request);
+        $rawData = $this->prepareData(...$params);
+        $export = new XMLExporter($rawData, $params[1], $params[2]);
+        $exportData = $export->asXml();
+        $exportFileName = $params[0] . '_'. date('d_m_Y_H_I_s') . '.xml';
+        return response()->stream(
+            function() use ($exportData) {
+                $handle = fopen('php://output', 'w');
+                fwrite ($handle, $exportData);
+                fclose($handle);
+            },
+            Response::HTTP_OK,
+            array_merge(
+                self::EXPORT_HEADERS,
+                [
+                    'Content-Disposition' => 'attachment; filename=' . $exportFileName,
+                ]
+            )
+        );
     }
 }

@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Client;
 use App\Currency;
-use App\Http\Resources\ClientResource;
 use App\Purse;
+use Symfony\Component\HttpFoundation\Response;
+use App\Http\Resources\ClientResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Laravel\Lumen\Routing\Controller;
 
+/**
+ * Class ClientController
+ * @package App\Http\Controllers
+ */
 class ClientController extends Controller
 {
     const DUBLICATE_CLIENT_ERROR = 'Client is already registered';
@@ -17,6 +22,7 @@ class ClientController extends Controller
     const SAVE_PURSE_ERROR = 'Error save new purse';
     const UNAVAILABLE_CURRENCY_ERROR = 'Currency not found';
     const SEARCH_TERM = 'search';
+
     /**
      * @param Request $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
@@ -39,7 +45,8 @@ class ClientController extends Controller
         if ($client) {
             return new ClientResource($client);
         }
-        return response()->json(self::UNAVAILABLE_CURRENCY_ERROR, 404);
+        return response()
+            ->json(self::UNAVAILABLE_CURRENCY_ERROR, Response::HTTP_NOT_FOUND);
     }
 
     /**
@@ -54,13 +61,15 @@ class ClientController extends Controller
             $queryBuilder->where($field, '=', $request->input($field));
         }
         if ($queryBuilder->first()) {
-            return response()->json(self::DUBLICATE_CLIENT_ERROR, 400);
+            return response()
+                ->json(self::DUBLICATE_CLIENT_ERROR, Response::HTTP_NOT_FOUND);
         }
 
         $currency = Currency::where('code', $request->only('code'))
             ->first();
         if (!$currency) {
-            return response()->json(self::UNAVAILABLE_CURRENCY_ERROR, 400);
+            return response()
+                ->json(self::UNAVAILABLE_CURRENCY_ERROR, Response::HTTP_NOT_FOUND);
         }
 
         try {
@@ -81,7 +90,8 @@ class ClientController extends Controller
             return new ClientResource($client);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json($e->getMessage(), 500);
+            return response()
+                ->json($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -6,6 +6,7 @@ use App\Currency;
 use App\CurrencyQuote;
 use App\Http\Resources\CurrencyResource;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 use Laravel\Lumen\Routing\Controller;
 
@@ -16,6 +17,7 @@ class CurrencyController extends Controller
     const DUBLICATE_CURRENCY_ERROR = 'Currency is already created';
     const DUBLICATE_CURRENCY_QUOTE_ERROR = 'Currency quote on date is already created';
     const FUTURE_QUOTE_ERROR = 'No one knows future quotes';
+
     /**
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
@@ -34,7 +36,8 @@ class CurrencyController extends Controller
         if ($currency) {
             return new CurrencyResource($currency);
         }
-        return response()->json(self::CURRENCY_UNAVAILABLE_ERROR, 404);
+        return response()
+            ->json(self::CURRENCY_UNAVAILABLE_ERROR, Response::HTTP_NOT_FOUND);
     }
 
     /**
@@ -47,7 +50,8 @@ class CurrencyController extends Controller
             if (Currency::where('code', $request->input('code'))
                 ->orWhere('name', $request->input('name'))
                 ->first()) {
-                return response()->json(self::DUBLICATE_CURRENCY_ERROR, 400);
+                return response()
+                    ->json(self::DUBLICATE_CURRENCY_ERROR, Response::HTTP_NOT_FOUND);
             }
             DB::beginTransaction();
 
@@ -63,7 +67,8 @@ class CurrencyController extends Controller
             return new CurrencyResource($currency);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(self::SAVE_ERROR, 500);
+            return response()
+                ->json(self::SAVE_ERROR, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -79,12 +84,14 @@ class CurrencyController extends Controller
         $date = $request->input('date');
 
         if (strtotime($date) > $currentDateTimestamp) {
-            response()->json(self::FUTURE_QUOTE_ERROR, 400);
+            response()
+                ->json(self::FUTURE_QUOTE_ERROR, Response::HTTP_BAD_REQUEST);
         }
 
         $currency = Currency::where('code', $code)->first();
         if (!$currency) {
-            return response()->json(self::CURRENCY_UNAVAILABLE_ERROR, 400);
+            return response()
+                ->json(self::CURRENCY_UNAVAILABLE_ERROR, Response::HTTP_BAD_REQUEST);
         }
 
         if ($date &&
@@ -92,7 +99,8 @@ class CurrencyController extends Controller
             $currency->currencyQuoteHistory()
                 ->where('date', $date)
                 ->first()) {
-            return response()->json(self::DUBLICATE_CURRENCY_QUOTE_ERROR, 400);
+            return response()
+                ->json(self::DUBLICATE_CURRENCY_QUOTE_ERROR, Response::HTTP_BAD_REQUEST);
         }
 
         try {
@@ -109,7 +117,8 @@ class CurrencyController extends Controller
             }
             return new CurrencyResource($currency);
         } catch (\Exception $e) {
-            return response()->json(self::SAVE_ERROR, 500);
+            return response()
+                ->json(self::SAVE_ERROR, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

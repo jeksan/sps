@@ -10,7 +10,9 @@
 
 <template>
     <div id="app">
-        <h4>Report for finance operations</h4>
+        <p>
+            <h4>Report for finance operations</h4>
+        </p>
         <Report/>
     </div>
 </template>
