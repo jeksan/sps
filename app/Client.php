@@ -20,7 +20,8 @@ class Client extends BaseModel
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
-    public function purse() {
+    public function purse()
+    {
         return $this->hasOne(Purse::class, 'client_id');
     }
 }

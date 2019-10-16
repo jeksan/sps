@@ -11,7 +11,7 @@
 |
 */
 
-$router->group(['prefix' => 'api/v1'], function() use ($router) {
+$router->group(['prefix' => 'api/v1'], function () use ($router) {
     $router->get('clients', 'ClientController@index');
     $router->get('clients/{id}', 'ClientController@show');
     $router->post('clients', 'ClientController@store');
@@ -28,6 +28,6 @@ $router->group(['prefix' => 'api/v1'], function() use ($router) {
     $router->get('report/export', 'ReportController@generateXml');
 });
 
-$router->get('/{route:.*}/', function ()  {
+$router->get('/{route:.*}/', function () {
     return view('app');
 });

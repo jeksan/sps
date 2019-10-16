@@ -130,9 +130,9 @@ class ReportController extends Controller
         $exportData = $export->asXml();
         $exportFileName = $params[0] . '_'. date('d_m_Y_H_I_s') . '.xml';
         return response()->stream(
-            function() use ($exportData) {
+            function () use ($exportData) {
                 $handle = fopen('php://output', 'w');
-                fwrite ($handle, $exportData);
+                fwrite($handle, $exportData);
                 fclose($handle);
             },
             Response::HTTP_OK,
