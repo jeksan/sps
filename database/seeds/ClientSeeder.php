@@ -6,7 +6,7 @@ use App\Purse;
 
 class ClientSeeder extends Seeder
 {
-    private $cntClient = 5000;
+    private $cntClient = 1000;
     /**
      * Run the client seeds.
      *

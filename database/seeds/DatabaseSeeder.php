@@ -14,5 +14,6 @@ class DatabaseSeeder extends Seeder
         $this->call('CurrencySeeder');
         $this->call('ClientSeeder');
         $this->call('StartBalanceForClientSeeder');
+        $this->call('FinanceOperationsSeeder');
     }
 }

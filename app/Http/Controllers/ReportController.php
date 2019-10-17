@@ -59,6 +59,8 @@ class ReportController extends Controller
                     Currency::SCALE
                 );
             }
+            $result['sumOperationsUSD'] = (string)$result['sumOperationsUSD'];
+            $result['sumOperations'] = (string)$result['sumOperations'];
             $result['history'] = $history;
             unset($item, $history);
         }

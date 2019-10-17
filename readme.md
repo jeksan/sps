@@ -23,8 +23,13 @@ A simple payment system solves problems:
 composer install
 ```
 ```
+php artisan migrate
+```
+##### Install with demo data
+```
 php artisan migrate --seed
 ```
+
 ```
 npm install
 ```
